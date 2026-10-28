@@ -2,13 +2,15 @@
 
 > **Seeded demo data.** The frontend talks to the FastAPI backend (`/api/v1`), which stores data in PostgreSQL and uses Groq for report analysis. See `backend/README.md` for setup and `UX_CHANGES.md` for the latest interface changes.
 
----
-
 <p align="center">
   <a href="https://precursor-x-front-end.onrender.com">
     <img src="https://img.shields.io/badge/LIVE_DEMO-Visit_PRECURSOR--X-38bdf8?style=for-the-badge&logo=render&logoColor=white" alt="Live Demo">
   </a>
 </p>
+
+
+---
+
 
 ## Overview
 
