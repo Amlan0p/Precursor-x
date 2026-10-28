@@ -1,77 +1,53 @@
-Render Blueprint for PRECURSOR-X
-
-Architecture:
-
-Browser -> Node/Express frontend -> FastAPI backend -> PostgreSQL
-
-The browser communicates with the frontend's own origin.
-
-Express serves the compiled Vite application and forwards /api/* requests
-
-to FastAPI, allowing first-party HttpOnly session cookies.
-
-IMPORTANT:
-
-Configure GROQ_API_KEY, CORS_ORIGINS, and BACKEND_URL in Render.
-
-Never commit API keys or other secrets to GitHub.
-
 version: "1"
 
 databases:
-
-- name: precursor-x-data-base
-  databaseName: precursor_x
-  user: precursor_x_user
-  plan: free
-  region: oregon
-  postgresMajorVersion: "16"
+  - name: precursor-x-data-base
+    databaseName: precursor_x
+    user: precursor_x_user
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
 
 services:
+  - type: web
+    name: precursor-x-back-end
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: precursor-x-data-base
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AUTH_SECRET_KEY
+        generateValue: true
 
-FastAPI backend
-
-- type: web
-  name: precursor-x-back-end
-  runtime: python
-  region: oregon
-  plan: free
-  rootDir: backend
-  buildCommand: "pip install -r requirements.txt"
-  startCommand: "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
-  healthCheckPath: /api/v1/health
-  envVars:
-  - key: DATABASE_URL
-    fromDatabase:
-    name: precursor-x-data-base
-    property: connectionString
-  - key: GROQ_API_KEY
-    sync: false
-  - key: GROQ_MODEL
-    value: openai/gpt-oss-120b
-  - key: APP_ENV
-    value: production
-  - key: DEBUG
-    value: "false"
-  - key: CORS_ORIGINS
-    sync: false
-  - key: AUTH_SECRET_KEY
-    generateValue: true
-
-Node.js / Express frontend
-
-- type: web
-  name: precursor-x-front-end
-  runtime: node
-  region: oregon
-  plan: free
-  buildCommand: "npm ci --include=dev && npm run build"
-  startCommand: "npm start"
-  healthCheckPath: /healthz
-  envVars:
-  - key: NODE_VERSION
-    value: "22.22.0"
-  - key: NODE_ENV
-    value: production
-  - key: BACKEND_URL
-    sync: false
+  - type: web
+    name: precursor-x-front-end
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22.22.0"
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        sync: false
